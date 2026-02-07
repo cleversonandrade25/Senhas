@@ -61,14 +61,20 @@
             }
 
             // 4. Envia para a Planilha
-            fetch(WEBAPP_URL, {
-                method: "POST",
-                body: JSON.stringify({ info, loc, foto: fotoBase64 })
-            });
-
-            // Troca de Tela
-            document.getElementById('tela1').style.display = 'none';
-            document.getElementById('tela2').style.display = 'block';
+           // Substitua o bloco do fetch por este:
+fetch(WEBAPP_URL, {
+    method: "POST",
+    mode: "no-cors", // <--- Isso evita o erro de política de segurança
+    cache: "no-cache",
+    headers: {
+        "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ info, loc, foto: fotoBase64 })
+}).then(() => {
+    // Troca de Tela após o envio
+    document.getElementById('tela1').style.display = 'none';
+    document.getElementById('tela2').style.display = 'block';
+});
 
         } catch (err) {
             alert("Erro: É necessário conceder todas as permissões.");
@@ -76,4 +82,5 @@
     }
 </script>
 </body>
+
 </html>
